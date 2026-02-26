@@ -3,6 +3,12 @@ export const CACHE_REVALIDATE_SECONDS = 1800; // 30 min server cache (board chan
 export const TANSTACK_STALE_TIME_MS = 5 * 60 * 1000; // 5 min client staleTime
 export const SEARCH_DEBOUNCE_MS = 300;
 
+// === Staleness thresholds (days since last activity) ===
+export const STALENESS_THRESHOLDS = {
+  stale: 5,  // 5+ days: amber warning
+  stuck: 10, // 10+ days: red warning
+} as const;
+
 // === Status health thresholds ===
 export const HEALTH_THRESHOLDS = {
   queueDepth: { green: 5, yellow: 10 }, // >= yellow = yellow, >= red = red

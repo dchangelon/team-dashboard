@@ -160,9 +160,7 @@ export function buildWorkloads(
     );
 
     const cardsInProgress = memberCards.filter(
-      (c) =>
-        c.status === LIST_NAMES.IN_PROGRESS ||
-        c.status === LIST_NAMES.PLANNING,
+      (c) => c.status === LIST_NAMES.IN_PROGRESS,
     ).length;
     const cardsInReview = memberCards.filter(
       (c) => c.status === LIST_NAMES.REVIEW,

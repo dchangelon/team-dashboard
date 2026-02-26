@@ -1,10 +1,10 @@
 "use client";
 
 import type { DashboardCard } from "@/lib/types";
-import { LABEL_COLORS, BUCKET_COLORS, type BucketKey } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { LABEL_COLORS, BUCKET_COLORS, STALENESS_THRESHOLDS, type BucketKey } from "@/lib/constants";
+import { formatDate, getDaysSinceActivity } from "@/lib/utils";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { Calendar, AlertTriangle } from "lucide-react";
+import { Calendar, AlertTriangle, Clock } from "lucide-react";
 
 interface ProjectCardProps {
   card: DashboardCard;
@@ -13,6 +13,8 @@ interface ProjectCardProps {
 
 export function ProjectCard({ card, onClick }: ProjectCardProps) {
   const bucketColors = BUCKET_COLORS[card.bucket as BucketKey];
+  const daysSinceActivity = getDaysSinceActivity(card.lastActivity);
+  const showStaleness = !card.isComplete && !card.isOverdue && daysSinceActivity >= STALENESS_THRESHOLDS.stale;
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" || e.key === " ") {
@@ -73,6 +75,21 @@ export function ProjectCard({ card, onClick }: ProjectCardProps) {
               <Calendar className="h-3 w-3" />
               {formatDate(card.dueDate)}
               {card.isOverdue && <AlertTriangle className="h-3 w-3" />}
+            </span>
+          </>
+        )}
+        {showStaleness && (
+          <>
+            <span className="text-gray-300 text-[10px]">&middot;</span>
+            <span
+              className={`flex shrink-0 items-center gap-0.5 text-[11px] font-medium ${
+                daysSinceActivity >= STALENESS_THRESHOLDS.stuck
+                  ? "text-red-600"
+                  : "text-amber-600"
+              }`}
+            >
+              <Clock className="h-3 w-3" />
+              {daysSinceActivity}d idle
             </span>
           </>
         )}

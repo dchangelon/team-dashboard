@@ -2,7 +2,7 @@
 
 import type { DashboardCard } from "@/lib/types";
 import { LABEL_COLORS } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatRelativeTime } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import {
   Calendar,
+  Clock,
   AlertTriangle,
   CheckSquare,
   Square,
@@ -127,6 +128,14 @@ export function CardModal({ card, open, onOpenChange }: CardModalProps) {
             )}
           </div>
         )}
+
+        {/* Last activity */}
+        <div className="flex items-center gap-2 text-sm">
+          <Clock className="h-4 w-4 text-gray-400" />
+          <span className="text-gray-500">
+            Last activity {formatRelativeTime(card.lastActivity)}
+          </span>
+        </div>
 
         {/* Overall progress */}
         {overallProgress !== null && (

@@ -20,6 +20,12 @@ export function formatRelativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
+/** Days since an ISO timestamp (floored) */
+export function getDaysSinceActivity(iso: string): number {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
 /** "Jan 15" or "Jan 15, 2025" (includes year if not current year) */
 export function formatDate(iso: string): string {
   const date = new Date(iso);
