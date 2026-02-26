@@ -55,8 +55,7 @@ export function TeamOverview({
     const cardsInProgress = memberCards.filter(
       (c) =>
         c.status === LIST_NAMES.IN_PROGRESS ||
-        c.status === LIST_NAMES.PLANNING ||
-        c.status === LIST_NAMES.REVIEW,
+        c.status === LIST_NAMES.PLANNING,
     ).length;
     const cardsInReview = memberCards.filter(
       (c) => c.status === LIST_NAMES.REVIEW,

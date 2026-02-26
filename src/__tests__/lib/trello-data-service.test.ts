@@ -421,7 +421,7 @@ describe("buildWorkloads", () => {
     expect(daniel.overdueCards).toBe(1);
 
     const nathan = workloads.find((w) => w.memberName === "Nathan")!;
-    expect(nathan.cardsInProgress).toBe(1); // Pending Review counts as in-progress
+    expect(nathan.cardsInProgress).toBe(0);
     expect(nathan.cardsInReview).toBe(1);
     expect(nathan.cardsTotal).toBe(1);
     expect(nathan.overdueCards).toBe(0);
