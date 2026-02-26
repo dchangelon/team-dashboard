@@ -4,6 +4,7 @@ interface ProgressRingProps {
   value: number; // 0-100
   size?: number; // px
   strokeWidth?: number; // px
+  strokeColorClass?: string; // Override auto color (e.g., "text-red-500")
   className?: string;
 }
 
@@ -11,12 +12,13 @@ export function ProgressRing({
   value,
   size = 56,
   strokeWidth = 5,
+  strokeColorClass,
   className = "",
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
-  const colorClass = getProgressStrokeColor(value);
+  const colorClass = strokeColorClass ?? getProgressStrokeColor(value);
 
   return (
     <svg

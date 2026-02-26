@@ -10,7 +10,6 @@ export interface TrelloCard {
   due: string | null;
   dueComplete: boolean;
   dateLastActivity: string;
-  shortUrl: string;
   checklists: TrelloChecklist[];
 }
 
@@ -61,7 +60,6 @@ export interface DashboardCard {
   isOverdue: boolean;
   isComplete: boolean;
   lastActivity: string;
-  trelloUrl: string;
   checklistProgress: number; // 0-100
   checklistTotal: number;
   checklistCompleted: number;

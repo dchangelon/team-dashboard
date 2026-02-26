@@ -63,7 +63,6 @@ function makeCard(overrides: Partial<TrelloCard> = {}): TrelloCard {
     due: null,
     dueComplete: false,
     dateLastActivity: new Date().toISOString(),
-    shortUrl: "https://trello.com/c/abc123",
     checklists: [],
     ...overrides,
   };
@@ -98,7 +97,6 @@ describe("transformCard", () => {
     expect(result.assignees).toEqual(["Daniel"]);
     expect(result.assigneeIds).toEqual(["member-daniel"]);
     expect(result.labels).toEqual([{ name: "Urgent", color: "red" }]);
-    expect(result.trelloUrl).toBe("https://trello.com/c/abc123");
     expect(result.checklistProgress).toBe(67); // 2/3
     expect(result.checklistTotal).toBe(3);
     expect(result.checklistCompleted).toBe(2);

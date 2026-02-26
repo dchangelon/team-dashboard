@@ -48,7 +48,7 @@ export class TrelloClient {
   async getCards(): Promise<TrelloCard[]> {
     return this.request(`/boards/${this.boardId}/cards`, {
       fields:
-        "name,desc,idList,idMembers,idLabels,due,dueComplete,dateLastActivity,shortUrl",
+        "name,desc,idList,idMembers,idLabels,due,dueComplete,dateLastActivity",
       checklists: "all",
       filter: "open",
     });

@@ -17,7 +17,6 @@ function makeCard(overrides: Partial<DashboardCard> = {}): DashboardCard {
     isOverdue: false,
     isComplete: false,
     lastActivity: new Date().toISOString(),
-    trelloUrl: "https://trello.com/c/abc123",
     checklistProgress: 50,
     checklistTotal: 4,
     checklistCompleted: 2,

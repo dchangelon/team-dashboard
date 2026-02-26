@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   CheckSquare,
   Square,
-  ExternalLink,
 } from "lucide-react";
 
 /**
@@ -200,21 +199,6 @@ export function CardModal({ card, open, onOpenChange }: CardModalProps) {
           </>
         )}
 
-        {/* View in Trello link */}
-        {card.trelloUrl && (
-          <>
-            <Separator />
-            <a
-              href={card.trelloUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors duration-200"
-            >
-              <ExternalLink className="h-4 w-4" />
-              View in Trello
-            </a>
-          </>
-        )}
       </DialogContent>
     </Dialog>
   );

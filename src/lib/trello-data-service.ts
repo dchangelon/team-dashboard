@@ -92,7 +92,6 @@ export function transformCard(
     isOverdue,
     isComplete,
     lastActivity: card.dateLastActivity,
-    trelloUrl: card.shortUrl,
     checklistProgress,
     checklistTotal,
     checklistCompleted,
