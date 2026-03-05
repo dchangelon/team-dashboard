@@ -2,9 +2,8 @@
 
 import { useDashboardData, useRevalidate } from "@/hooks/use-dashboard-data";
 import { formatRelativeTime } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export function Header() {
@@ -21,47 +20,40 @@ export function Header() {
   const overdueCount = data?.summary.overdueCount ?? 0;
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="mx-auto flex max-w-7xl items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-blue-500">
-            <span className="text-sm font-bold text-white">D</span>
-          </div>
-          <div>
-          <h1 className="text-xl font-semibold text-gray-900">
+    <header className="border-b border-[#E0E0E4] bg-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-between h-14 px-4 sm:px-6 lg:px-8">
+        <div>
+          <h1 className="text-base font-semibold text-[#1A1A24] leading-tight">
             Data Analytics Projects
           </h1>
-          <p className="text-sm text-gray-500">
-            {isLoading ? (
-              <Skeleton className="mt-1 h-4 w-32" />
-            ) : data?.summary.lastUpdated ? (
-              `Updated ${formatRelativeTime(data.summary.lastUpdated)}`
-            ) : (
-              "Loading..."
-            )}
-          </p>
-          </div>
+          {!isLoading && data?.summary.lastUpdated && (
+            <p className="text-xs text-[#8A8A9B] mt-0.5">
+              Updated {formatRelativeTime(data.summary.lastUpdated)}
+            </p>
+          )}
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={handleRefresh}
           disabled={revalidate.isPending || isLoading}
+          className={cn(
+            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+            "text-[#5B5B6E] hover:bg-gray-50 hover:text-[#1A1A24]",
+            "disabled:opacity-40 disabled:cursor-not-allowed",
+          )}
         >
           <RefreshCw
-            className={`mr-1.5 h-4 w-4 ${revalidate.isPending ? "animate-spin" : ""}`}
+            className={cn("h-3.5 w-3.5", revalidate.isPending && "animate-spin")}
           />
-          Refresh
-        </Button>
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
       </div>
 
-      {/* Overdue alert banner */}
       {overdueCount > 0 && (
-        <div className="border-t border-red-200 bg-red-50">
+        <div className="border-t border-red-100 bg-red-50">
           <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2 sm:px-6 lg:px-8">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" />
-            <p className="text-sm font-medium text-red-800">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-600" />
+            <p className="text-xs font-medium text-red-700">
               {overdueCount} {overdueCount === 1 ? "project is" : "projects are"} overdue
             </p>
           </div>

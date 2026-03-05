@@ -119,6 +119,7 @@ export function buildSummary(
   // Bucket-based counting
   const queueDepth = cards.filter((c) => c.bucket === "queue").length;
   const inProgress = cards.filter((c) => c.bucket === "progress").length;
+  const pendingReview = cards.filter((c) => c.bucket === "review").length;
   const recentlyCompleted = cards.filter(
     (c) =>
       c.bucket === "completed" &&
@@ -133,6 +134,7 @@ export function buildSummary(
     byMember,
     queueDepth,
     inProgress,
+    pendingReview,
     recentlyCompleted,
     onHold,
     overdueCount,
@@ -160,12 +162,13 @@ export function buildWorkloads(
     );
 
     const cardsInProgress = memberCards.filter(
-      (c) =>
-        c.status === LIST_NAMES.IN_PROGRESS ||
-        c.status === LIST_NAMES.PLANNING,
+      (c) => c.bucket === "progress",
     ).length;
     const cardsInReview = memberCards.filter(
       (c) => c.status === LIST_NAMES.REVIEW,
+    ).length;
+    const cardsOnHold = memberCards.filter(
+      (c) => c.status === LIST_NAMES.ON_HOLD,
     ).length;
 
     const progressValues = memberCards
@@ -185,6 +188,7 @@ export function buildWorkloads(
       memberName,
       cardsInProgress,
       cardsInReview,
+      cardsOnHold,
       cardsTotal: memberCards.length,
       averageProgress,
       overdueCards,

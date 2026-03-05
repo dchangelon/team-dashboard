@@ -99,6 +99,7 @@ export interface BoardSummary {
   byMember: Record<string, number>;
   queueDepth: number;
   inProgress: number;
+  pendingReview: number; // Cards in "review" bucket
   recentlyCompleted: number; // Last 30 days
   onHold: number;
   overdueCount: number;

@@ -1,64 +1,16 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import type { DashboardCard } from "@/lib/types";
-import { LABEL_COLORS } from "@/lib/constants";
-import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { BUCKET_COLORS, LABEL_COLORS, type BucketKey } from "@/lib/constants";
+import { formatDate, formatRelativeTime, cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { ProgressRing } from "@/components/ui/progress-ring";
-import {
-  Calendar,
-  Clock,
-  AlertTriangle,
-  CheckSquare,
-  Square,
-} from "lucide-react";
-
-/**
- * Parses structured "Key: Value" descriptions into a readable format.
- * Falls back to plain text for lines that don't match the pattern.
- */
-function FormattedDescription({ text }: { text: string }) {
-  const lines = text.split("\n").filter((line) => line.trim());
-  const keyValuePattern = /^([A-Za-z][A-Za-z /]+?):\s*(.+)$/;
-
-  const parsed = lines.map((line) => {
-    const match = line.trim().match(keyValuePattern);
-    if (match) return { type: "field" as const, label: match[1], value: match[2] };
-    return { type: "text" as const, value: line.trim() };
-  });
-
-  const hasFields = parsed.some((p) => p.type === "field");
-
-  if (!hasFields) {
-    return (
-      <p className="whitespace-pre-wrap text-sm text-gray-500">{text}</p>
-    );
-  }
-
-  return (
-    <dl className="space-y-2 text-sm">
-      {parsed.map((item, i) =>
-        item.type === "field" ? (
-          <div key={i}>
-            <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              {item.label}
-            </dt>
-            <dd className="mt-0.5 text-gray-900">{item.value}</dd>
-          </div>
-        ) : (
-          <p key={i} className="text-gray-500">{item.value}</p>
-        ),
-      )}
-    </dl>
-  );
-}
+import { Calendar, Clock, AlertTriangle } from "lucide-react";
 
 interface CardModalProps {
   card: DashboardCard | null;
@@ -69,122 +21,153 @@ interface CardModalProps {
 export function CardModal({ card, open, onOpenChange }: CardModalProps) {
   if (!card) return null;
 
+  const bucketColors = BUCKET_COLORS[card.bucket as BucketKey];
   const overallProgress =
     card.checklistTotal > 0
       ? Math.round((card.checklistCompleted / card.checklistTotal) * 100)
       : null;
 
+  const toInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
+  const hasDueOrActivity = card.dueDate || card.lastActivity;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start gap-4">
-            {overallProgress !== null && (
-              <ProgressRing value={overallProgress} size={56} strokeWidth={5} />
-            )}
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg leading-snug pr-6">
-                {card.title}
-              </DialogTitle>
-            </div>
-          </div>
-        </DialogHeader>
-
-        {/* Status + Labels row */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-            {card.status}
-          </span>
-          {card.labels.map((label) => (
-            <span
-              key={label.name}
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${LABEL_COLORS[label.color] ?? "bg-gray-100 text-gray-700"}`}
-            >
-              {label.name}
-            </span>
-          ))}
-        </div>
-
-        {/* Assignees */}
-        {card.assignees.length > 0 && (
-          <div className="text-sm text-gray-500">
-            <span className="font-medium text-gray-900">Assigned to: </span>
-            {card.assignees.join(", ")}
-          </div>
-        )}
-
-        {/* Due date */}
-        {card.dueDate && (
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            <span className={card.isOverdue ? "font-medium text-red-600" : ""}>
-              {formatDate(card.dueDate)}
-            </span>
-            {card.isOverdue && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 text-red-700 px-2.5 py-0.5 text-xs font-medium">
-                <AlertTriangle className="h-3 w-3" />
-                Overdue
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Last activity */}
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="h-4 w-4 text-gray-400" />
-          <span className="text-gray-500">
-            Last activity {formatRelativeTime(card.lastActivity)}
-          </span>
-        </div>
-
-        {/* Overall progress */}
-        {overallProgress !== null && (
+      <DialogContent
+        className="max-h-[85vh] max-w-lg overflow-y-auto border-t-4"
+        style={{ borderTopColor: bucketColors?.hex ?? "#E0E0E4" }}
+      >
+        <div className="space-y-5">
+          {/* Title + status badge + label pills */}
           <div>
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="text-gray-500">Overall Progress</span>
-              <span className="font-medium">
-                {card.checklistCompleted}/{card.checklistTotal} ({overallProgress}%)
+            <DialogTitle className="mb-2 pr-8 text-xl font-semibold leading-snug text-[#1A1A24]">
+              {card.title}
+            </DialogTitle>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                  bucketColors?.badge ?? "bg-[#EBEBEF] text-[#5B5B6E]",
+                )}
+              >
+                {card.status}
               </span>
+              {card.labels.map((label) => (
+                <span
+                  key={label.name}
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                    LABEL_COLORS[label.color] ?? "bg-[#EBEBEF] text-[#5B5B6E]",
+                  )}
+                >
+                  {label.name}
+                </span>
+              ))}
             </div>
-            <ProgressBar
-              value={overallProgress}
-              completed={card.checklistCompleted}
-              total={card.checklistTotal}
-              size="md"
-            />
           </div>
-        )}
 
-        {/* Checklists */}
-        {card.checklists.length > 0 && (
-          <>
-            <Separator />
-            <div className="space-y-4">
+          {/* Meta row: assignees · due date · last activity */}
+          {(card.assignees.length > 0 || hasDueOrActivity) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#8A8A9B]">
+              {card.assignees.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {card.assignees.slice(0, 3).map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#FDF3EC] text-[10px] font-semibold text-[#E8762C]"
+                    >
+                      {toInitials(name)}
+                    </span>
+                  ))}
+                  {card.assignees.length > 3 && (
+                    <span className="ml-0.5">+{card.assignees.length - 3}</span>
+                  )}
+                </div>
+              )}
+
+              {card.assignees.length > 0 && hasDueOrActivity && (
+                <span className="text-[#D0D0D8]">·</span>
+              )}
+
+              {card.dueDate && (
+                <span
+                  className={cn(
+                    "flex items-center gap-1",
+                    card.isOverdue && "font-medium text-red-600",
+                  )}
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  {formatDate(card.dueDate)}
+                  {card.isOverdue && <AlertTriangle className="h-3 w-3" />}
+                </span>
+              )}
+
+              {card.dueDate && card.lastActivity && (
+                <span className="text-[#D0D0D8]">·</span>
+              )}
+
+              {card.lastActivity && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  {formatRelativeTime(card.lastActivity)}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Overall progress bar */}
+          {overallProgress !== null && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A9B]">
+                  Progress
+                </span>
+                <span className="tabular-nums text-xs font-medium text-[#5B5B6E]">
+                  {card.checklistCompleted} / {card.checklistTotal} · {overallProgress}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-[#EBEBEF]">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${overallProgress}%`,
+                    backgroundColor: bucketColors?.hex ?? "#E0E0E4",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Checklists */}
+          {card.checklists.length > 0 && (
+            <div className="space-y-4 border-t border-[#EBEBEF] pt-4">
               {card.checklists.map((checklist) => (
                 <div key={checklist.name}>
-                  <h4 className="mb-2 text-sm font-medium">
-                    {checklist.name}
-                    <span className="ml-2 text-gray-500">
-                      ({checklist.completed}/{checklist.total})
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8A8A9B]">
+                      {checklist.name}
                     </span>
-                  </h4>
-                  <ul className="space-y-1">
+                    <span className="tabular-nums text-xs text-[#8A8A9B]">
+                      {checklist.completed}/{checklist.total}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
                     {checklist.items.map((item) => (
-                      <li
-                        key={item.name}
-                        className="flex items-start gap-2 text-sm"
-                      >
-                        {item.complete ? (
-                          <CheckSquare className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
-                        ) : (
-                          <Square className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-                        )}
+                      <li key={item.name} className="flex items-start gap-2.5">
                         <span
-                          className={
+                          className={cn(
+                            "mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border-[1.5px]",
                             item.complete
-                              ? "text-gray-500 line-through"
-                              : ""
-                          }
+                              ? "border-[#3FA557] bg-[#3FA557]"
+                              : "border-[#D0D0D8]",
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "text-sm leading-snug",
+                            item.complete ? "text-[#ABABBB]" : "text-[#1A1A24]",
+                          )}
                         >
                           {item.name}
                         </span>
@@ -194,20 +177,38 @@ export function CardModal({ card, open, onOpenChange }: CardModalProps) {
                 </div>
               ))}
             </div>
-          </>
-        )}
+          )}
 
-        {/* Description */}
-        {card.description && (
-          <>
-            <Separator />
-            <div>
-              <h4 className="mb-2 text-sm font-medium">Description</h4>
-              <FormattedDescription text={card.description} />
+          {/* Description */}
+          {card.description && (
+            <div className="border-t border-[#EBEBEF] pt-4">
+              <span className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-[#8A8A9B]">
+                Description
+              </span>
+              <div className="space-y-2 text-sm">
+                <ReactMarkdown
+                  remarkPlugins={[remarkBreaks]}
+                  components={{
+                    p:      ({ children }) => <p className="text-[#5B5B6E]">{children}</p>,
+                    strong: ({ children }) => <strong className="font-semibold text-[#1A1A24]">{children}</strong>,
+                    em:     ({ children }) => <em className="italic text-[#5B5B6E]">{children}</em>,
+                    h1:     ({ children }) => <p className="text-xs font-semibold uppercase tracking-wider text-[#8A8A9B]">{children}</p>,
+                    h2:     ({ children }) => <p className="text-xs font-semibold uppercase tracking-wider text-[#8A8A9B]">{children}</p>,
+                    h3:     ({ children }) => <p className="text-xs font-semibold uppercase tracking-wider text-[#8A8A9B]">{children}</p>,
+                    ul:     ({ children }) => <ul className="ml-3 space-y-1">{children}</ul>,
+                    ol:     ({ children }) => <ol className="ml-3 list-decimal space-y-1">{children}</ol>,
+                    li:     ({ children }) => <li className="flex items-start gap-2 text-[#5B5B6E]"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#D0D0D8]" /><span>{children}</span></li>,
+                    a:      ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#E8762C] underline underline-offset-2">{children}</a>,
+                    code:   ({ children }) => <code className="rounded bg-[#EBEBEF] px-1 py-0.5 font-mono text-xs text-[#5B5B6E]">{children}</code>,
+                    hr:     () => <hr className="border-[#EBEBEF]" />,
+                  }}
+                >
+                  {card.description}
+                </ReactMarkdown>
+              </div>
             </div>
-          </>
-        )}
-
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

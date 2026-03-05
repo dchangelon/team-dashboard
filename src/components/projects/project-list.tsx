@@ -17,8 +17,9 @@ interface ProjectListProps {
 
 // Default expanded state: active buckets open, others collapsed
 const DEFAULT_EXPANDED: Record<BucketKey, boolean> = {
-  progress: true,
   queue: true,
+  progress: true,
+  review: true,
   onHold: false,
   completed: false,
 };

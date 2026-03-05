@@ -1,118 +1,138 @@
 "use client";
 
-import { useState } from "react";
 import type { DashboardCard, TeamMemberWorkload } from "@/lib/types";
 import { CAPACITY_THRESHOLDS } from "@/lib/constants";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ProgressRing } from "@/components/ui/progress-ring";
-import { ProjectCard } from "@/components/projects/project-card";
-import { AlertTriangle, ChevronDown, ChevronUp, Inbox } from "lucide-react";
+import { AlertTriangle, Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MemberCardProps {
-  workload: TeamMemberWorkload & { allCardsTotal?: number };
+  workload: TeamMemberWorkload & {
+    allCardsTotal?: number;
+    allCardsOnHold?: number;
+    allCardsInProgress?: number;
+    allCardsInReview?: number;
+  };
   onCardClick: (card: DashboardCard) => void;
 }
 
-function getCapacityStyle(activeCards: number) {
-  if (activeCards > CAPACITY_THRESHOLDS.nearCapacity)
-    return { border: "border-l-red-500", badge: "bg-red-50 text-red-700", label: "High load" };
-  if (activeCards > CAPACITY_THRESHOLDS.available)
-    return { border: "border-l-amber-500", badge: "bg-amber-50 text-amber-700", label: "Moderate" };
-  return { border: "border-l-green-500", badge: "bg-green-50 text-green-700", label: "Light" };
+function getCapacityColor(activeCount: number): string {
+  if (activeCount > CAPACITY_THRESHOLDS.nearCapacity) return "#D4281C"; // high — red
+  if (activeCount > CAPACITY_THRESHOLDS.available) return "#D9853B";   // moderate — amber
+  return "#3FA557";                                                      // light — green
 }
 
-export function MemberCard({ workload, onCardClick }: MemberCardProps) {
-  const [expanded, setExpanded] = useState(false);
-
-  const showExpandToggle = workload.cards.length > 4;
-  const visibleCards = expanded ? workload.cards : workload.cards.slice(0, 4);
+export function MemberCard({ workload }: MemberCardProps) {
   const isUnassigned = workload.memberId === "__unassigned__";
-  const capacityTotal = workload.allCardsTotal ?? workload.cardsTotal;
-  const capacity = isUnassigned
-    ? { border: "border-l-gray-400", badge: "bg-gray-100 text-gray-600", label: `${workload.cardsTotal} cards` }
-    : getCapacityStyle(capacityTotal);
+
+  // Use original (unfiltered) counts for the capacity bar so filters don't distort it
+  const onHoldCards = workload.allCardsOnHold    ?? workload.cardsOnHold    ?? 0;
+  const inProgCards = workload.allCardsInProgress ?? workload.cardsInProgress;
+  const reviewCards = workload.allCardsInReview   ?? workload.cardsInReview;
+  const activeCards = inProgCards + reviewCards; // progress bucket + review bucket
+
+  // Bar fills relative to nearCapacity + 2 (so threshold = ~80% full)
+  const barMax    = CAPACITY_THRESHOLDS.nearCapacity + 2;
+  const rawActivePct = (activeCards  / barMax) * 100;
+  const rawOnHoldPct = (onHoldCards  / barMax) * 100;
+  const rawTotal     = rawActivePct + rawOnHoldPct;
+  const scale        = rawTotal > 100 ? 100 / rawTotal : 1;
+  const activePct    = Math.round(rawActivePct * scale);
+  const onHoldPct    = Math.round(rawOnHoldPct * scale);
+
+  const activeColor = isUnassigned ? "#8A8A9B" : getCapacityColor(activeCards);
+
+  const initials = isUnassigned
+    ? null
+    : workload.memberName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
 
   return (
-    <Card className={`overflow-hidden pt-0 gap-0 bg-white border border-gray-200 shadow-sm border-l-4 ${capacity.border}`}>
-      {/* Header: ProgressRing + name + capacity badge */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-        {isUnassigned ? (
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-            <Inbox className="h-5 w-5" />
-          </span>
-        ) : (
-          <ProgressRing value={workload.averageProgress} size={48} strokeWidth={4} />
+    <div className="flex items-center gap-3 px-4 py-3">
+      {/* Avatar */}
+      <div
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+          isUnassigned ? "bg-[#EBEBEF] text-[#8A8A9B]" : "bg-[#FDF3EC] text-[#E8762C]",
         )}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold leading-tight text-sm text-gray-900">{workload.memberName}</h3>
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-1 ${capacity.badge}`}>
-            {capacity.label}
-          </span>
-        </div>
-        {workload.overdueCards > 0 && (
-          <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-50 text-red-700 px-2 py-0.5 text-xs font-medium">
-            <AlertTriangle className="h-3 w-3" />
-            {workload.overdueCards} overdue
-          </span>
-        )}
+      >
+        {isUnassigned ? <Inbox className="h-4 w-4" /> : initials}
       </div>
 
-      <CardContent className="space-y-3 px-4 pt-3 pb-3">
-        {/* Stat blocks */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-md bg-blue-50 px-2 py-1.5">
-            <p className="text-lg font-bold text-blue-700">{workload.cardsInProgress}</p>
-            <p className="text-[11px] text-blue-600">in progress</p>
-          </div>
-          <div className="rounded-md bg-amber-50 px-2 py-1.5">
-            <p className="text-lg font-bold text-amber-700">{workload.cardsInReview}</p>
-            <p className="text-[11px] text-amber-600">in review</p>
-          </div>
-          <div className="rounded-md bg-gray-50 px-2 py-1.5">
-            <p className="text-lg font-bold text-gray-700">{workload.cardsOnHold ?? 0}</p>
-            <p className="text-[11px] text-gray-500">on hold</p>
-          </div>
+      {/* Name + segmented workload bar */}
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex items-center justify-between leading-none">
+          <span className="truncate text-sm font-medium text-[#1A1A24]">
+            {workload.memberName}
+          </span>
+          {/* Count label — splits active / on-hold when both present */}
+          <span className="ml-2 shrink-0 tabular-nums text-xs text-[#8A8A9B]">
+            {isUnassigned ? (
+              `${workload.cardsTotal} cards`
+            ) : onHoldCards > 0 ? (
+              <span>
+                {activeCards} active
+                <span className="text-[#D0D0D8]"> · </span>
+                <span className="text-[#8A8A9B]">{onHoldCards} on hold</span>
+              </span>
+            ) : (
+              `${activeCards} active`
+            )}
+          </span>
         </div>
 
-        {/* Card list */}
-        {workload.cards.length === 0 ? (
-          <p className="py-2 text-center text-sm text-gray-500">
-            No active projects assigned
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {visibleCards.map((card) => (
-              <ProjectCard
-                key={card.id}
-                card={card}
-                onClick={() => onCardClick(card)}
-              />
-            ))}
+        {/* Two-segment bar: active (capacity-colored) + on-hold (gray) */}
+        {/* Unassigned: single neutral bar showing total backlog depth */}
+        <div className="flex h-1.5 overflow-hidden rounded-full bg-[#EBEBEF]">
+          {isUnassigned ? (
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(100, (workload.cardsTotal / barMax) * 100)}%`,
+                backgroundColor: "#8A8A9B",
+                transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            />
+          ) : (
+            <>
+              {activePct > 0 && (
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${activePct}%`,
+                    backgroundColor: activeColor,
+                    borderRadius: onHoldPct > 0 ? "9999px 0 0 9999px" : "9999px",
+                    transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
+              )}
+              {onHoldPct > 0 && (
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${onHoldPct}%`,
+                    backgroundColor: "#6B7280",
+                    marginLeft: activePct > 0 ? "2px" : 0,
+                    borderRadius: activePct > 0 ? "0 9999px 9999px 0" : "9999px",
+                    transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
-            {showExpandToggle && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => setExpanded(!expanded)}
-              >
-                {expanded ? (
-                  <>
-                    <ChevronUp className="mr-1 h-4 w-4" />
-                    Show less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="mr-1 h-4 w-4" />
-                    Show all {workload.cards.length} projects
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Overdue indicator */}
+      {workload.overdueCards > 0 && (
+        <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-red-600">
+          <AlertTriangle className="h-3 w-3" />
+          {workload.overdueCards}
+        </span>
+      )}
+    </div>
   );
 }

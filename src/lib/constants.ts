@@ -28,29 +28,45 @@ export const LIST_NAMES = {
   ON_HOLD: "On Hold",
 } as const;
 
-// === Status sort order for project lists within member cards ===
-// Lower number = appears first. In Progress → Planning → Review → On Hold → Completed → Queue
+// === Status sort order for the flat project list ===
+// Lower number = appears first.
+// Active work first, then queue, then paused, then done.
 export const STATUS_SORT_ORDER: Record<string, number> = {
   [LIST_NAMES.IN_PROGRESS]: 0,
   [LIST_NAMES.PLANNING]: 1,
   [LIST_NAMES.REVIEW]: 2,
-  [LIST_NAMES.ON_HOLD]: 3,
-  [LIST_NAMES.COMPLETED]: 4,
-  [LIST_NAMES.QUEUE]: 5,
-  [LIST_NAMES.NEW_PROJECT_QUEUE]: 6,
+  [LIST_NAMES.QUEUE]: 3,
+  [LIST_NAMES.NEW_PROJECT_QUEUE]: 4,
+  [LIST_NAMES.ON_HOLD]: 5,
+  [LIST_NAMES.COMPLETED]: 6,
 };
 
+// === Project list groups (for section headers in the main project list) ===
+// Each group can span multiple Trello list names.
+export const PROJECT_LIST_GROUPS: { label: string; statuses: string[] }[] = [
+  { label: "In Progress",          statuses: [LIST_NAMES.IN_PROGRESS] },
+  { label: "Reviewing & Planning", statuses: [LIST_NAMES.PLANNING] },
+  { label: "Pending Review",       statuses: [LIST_NAMES.REVIEW] },
+  { label: "Queue",                statuses: [LIST_NAMES.QUEUE, LIST_NAMES.NEW_PROJECT_QUEUE] },
+  { label: "On Hold",              statuses: [LIST_NAMES.ON_HOLD] },
+  { label: "Completed",            statuses: [LIST_NAMES.COMPLETED] },
+];
+
 // === Bucket groupings ===
-// High-level categories for the dashboard. Each bucket aggregates one or more Trello lists.
-// Display order: progress → queue → onHold → completed (active work first)
+// High-level categories for the pipeline tracker.
+// "Pending Review" is now its own bucket — distinct from active work.
 export const BUCKETS = {
-  progress: {
-    label: "In Progress",
-    lists: [LIST_NAMES.PLANNING, LIST_NAMES.IN_PROGRESS, LIST_NAMES.REVIEW] as readonly string[],
-  },
   queue: {
     label: "Queue",
     lists: [LIST_NAMES.QUEUE, LIST_NAMES.NEW_PROJECT_QUEUE] as readonly string[],
+  },
+  progress: {
+    label: "In Progress",
+    lists: [LIST_NAMES.PLANNING, LIST_NAMES.IN_PROGRESS] as readonly string[],
+  },
+  review: {
+    label: "Pending Review",
+    lists: [LIST_NAMES.REVIEW] as readonly string[],
   },
   onHold: {
     label: "On Hold",
@@ -64,8 +80,8 @@ export const BUCKETS = {
 
 export type BucketKey = keyof typeof BUCKETS;
 
-// Display order for bucket sections (pipeline flow: left-to-right)
-export const BUCKET_ORDER: BucketKey[] = ["queue", "progress", "onHold", "completed"];
+// Display order for pipeline tracker stages (left-to-right flow)
+export const BUCKET_ORDER: BucketKey[] = ["queue", "progress", "review", "onHold", "completed"];
 
 // Flat set of all lists the app cares about — cards from unlisted Trello lists are filtered out
 export const ALLOWED_LISTS = new Set(
@@ -114,33 +130,45 @@ export const LABEL_COLORS: Record<string, string> = {
 };
 
 // === Bucket color mapping (status → visual classes) ===
+// Colors calibrated to Tableau Cloud design language
 export const BUCKET_COLORS: Record<
   BucketKey,
-  { border: string; dot: string; badge: string; bg: string }
+  { border: string; dot: string; badge: string; bg: string; hex: string }
 > = {
-  progress: {
-    border: "border-l-blue-500",
-    dot: "bg-blue-500",
-    badge: "bg-blue-50 text-blue-700",
-    bg: "",
-  },
   queue: {
-    border: "border-l-amber-500",
-    dot: "bg-amber-500",
-    badge: "bg-amber-50 text-amber-700",
+    border: "border-l-indigo-500",
+    dot: "bg-indigo-500",
+    badge: "bg-indigo-50 text-indigo-700",
     bg: "",
+    hex: "#6366F1",
+  },
+  progress: {
+    border: "border-l-[#E8762C]",
+    dot: "bg-[#E8762C]",
+    badge: "bg-orange-50 text-[#CF6A27]",
+    bg: "",
+    hex: "#E8762C",
+  },
+  review: {
+    border: "border-l-teal-500",
+    dot: "bg-teal-500",
+    badge: "bg-teal-50 text-teal-700",
+    bg: "",
+    hex: "#14B8A6",
   },
   onHold: {
-    border: "border-l-gray-400",
-    dot: "bg-gray-400",
-    badge: "bg-gray-100 text-gray-600",
+    border: "border-l-[#6B7280]",
+    dot: "bg-[#6B7280]",
+    badge: "bg-gray-100 text-[#4B5563]",
     bg: "",
+    hex: "#6B7280",
   },
   completed: {
-    border: "border-l-green-500",
-    dot: "bg-green-500",
-    badge: "bg-green-50 text-green-700",
+    border: "border-l-[#3FA557]",
+    dot: "bg-[#3FA557]",
+    badge: "bg-green-50 text-[#2E7D40]",
     bg: "",
+    hex: "#3FA557",
   },
 };
 
@@ -152,17 +180,17 @@ export const CAPACITY_THRESHOLDS = {
 
 // === Progress color thresholds (shared by ProgressBar + ProgressRing) ===
 export function getProgressColor(value: number): string {
-  if (value === 100) return "bg-green-500";
-  if (value >= 60) return "bg-blue-500";
-  if (value >= 30) return "bg-yellow-500";
-  return "bg-gray-400";
+  if (value === 100) return "bg-[#3FA557]";
+  if (value >= 60) return "bg-[#E8762C]";
+  if (value >= 30) return "bg-amber-400";
+  return "bg-[#EBEBEF]";
 }
 
 export function getProgressStrokeColor(value: number): string {
-  if (value === 100) return "text-green-500";
-  if (value >= 60) return "text-blue-500";
-  if (value >= 30) return "text-yellow-500";
-  return "text-gray-400";
+  if (value === 100) return "text-[#3FA557]";
+  if (value >= 60) return "text-[#E8762C]";
+  if (value >= 30) return "text-amber-400";
+  return "text-[#EBEBEF]";
 }
 
 // === Utility: resolve bucket key from a Trello list name ===
