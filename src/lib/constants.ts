@@ -5,8 +5,8 @@ export const SEARCH_DEBOUNCE_MS = 300;
 
 // === Staleness thresholds (days since last activity) ===
 export const STALENESS_THRESHOLDS = {
-  stale: 5,  // 5+ days: amber warning
-  stuck: 10, // 10+ days: red warning
+  stale: 14, // 14+ days: amber warning
+  stuck: 21, // 21+ days: red warning
 } as const;
 
 // === Status health thresholds ===
