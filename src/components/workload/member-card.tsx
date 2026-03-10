@@ -12,6 +12,7 @@ interface MemberCardProps {
     allCardsInProgress?: number;
     allCardsInReview?: number;
   };
+  teamMax: number;
   onCardClick: (card: DashboardCard) => void;
 }
 
@@ -21,7 +22,7 @@ function getCapacityColor(activeCount: number): string {
   return "#3FA557";                                                      // light — green
 }
 
-export function MemberCard({ workload }: MemberCardProps) {
+export function MemberCard({ workload, teamMax }: MemberCardProps) {
   const isUnassigned = workload.memberId === "__unassigned__";
 
   // Use original (unfiltered) counts for the capacity bar so filters don't distort it
@@ -30,8 +31,8 @@ export function MemberCard({ workload }: MemberCardProps) {
   const reviewCards = workload.allCardsInReview   ?? workload.cardsInReview;
   const activeCards = inProgCards + reviewCards; // progress bucket + review bucket
 
-  // Bar fills relative to nearCapacity + 2 (so threshold = ~80% full)
-  const barMax    = CAPACITY_THRESHOLDS.nearCapacity + 2;
+  // Bar fills relative to the team-wide max so bars are proportional across members
+  const barMax    = teamMax;
   const rawActivePct = (activeCards  / barMax) * 100;
   const rawOnHoldPct = (onHoldCards  / barMax) * 100;
   const rawTotal     = rawActivePct + rawOnHoldPct;

@@ -121,6 +121,17 @@ export function TeamOverview({
     };
   });
 
+  // Compute team-wide max for proportional bar scaling
+  const teamMax = Math.max(
+    1,
+    ...filteredWorkloads.map((w) => {
+      const prog = w.allCardsInProgress ?? w.cardsInProgress;
+      const rev = w.allCardsInReview ?? w.cardsInReview;
+      const hold = w.allCardsOnHold ?? w.cardsOnHold ?? 0;
+      return prog + rev + hold;
+    }),
+  );
+
   // Unassigned cards
   const memberIdSet = new Set(workloads.map((w) => w.memberId));
   const unassignedCards = cards.filter(
@@ -251,6 +262,7 @@ export function TeamOverview({
               <MemberCard
                 key={workload.memberId}
                 workload={workload}
+                teamMax={teamMax}
                 onCardClick={onCardClick}
               />
             ))}
@@ -258,6 +270,7 @@ export function TeamOverview({
               <MemberCard
                 key="__unassigned__"
                 workload={unassignedWorkload}
+                teamMax={teamMax}
                 onCardClick={onCardClick}
               />
             )}
